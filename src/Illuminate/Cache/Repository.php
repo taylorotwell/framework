@@ -496,7 +496,7 @@ class Repository implements ArrayAccess, CacheContract
             ], $ttl[1]));
         }
 
-        if (($created + $this->getSeconds($ttl[0])) > Carbon::now()->getTimestamp()) {
+        if (Carbon::now()->getTimestamp() < ($created + $this->getSeconds($ttl[0]))) {
             return $value;
         }
 
@@ -506,7 +506,7 @@ class Repository implements ArrayAccess, CacheContract
                 $lock['seconds'] ?? 0,
                 $lock['owner'] ?? null,
             )->get(function () use ($key, $callback, $created, $ttl, $lock) {
-                if ($created !== $this->get("{$key}:created")) {
+                if (! in_array($this->get("{$key}:created"), [null, $created], true)) {
                     return;
                 }
 

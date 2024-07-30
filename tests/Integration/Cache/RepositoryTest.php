@@ -2,13 +2,15 @@
 
 namespace Illuminate\Tests\Integration\Cache;
 
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Orchestra\Testbench\TestCase;
 
 class RepositoryTest extends TestCase
 {
-    public function testStaleWhileRevalidate(): void
+    public function testFlexible(): void
     {
         Carbon::setTestNow('2000-01-01 00:00:00');
         $cache = Cache::driver('array');
@@ -146,5 +148,57 @@ class RepositoryTest extends TestCase
         $this->assertCount(0, defer());
         $this->assertSame(99, $cache->get('foo'));
         $this->assertSame(946684863, $cache->get('foo:created'));
+    }
+
+    public function testItStillRefreshesWhenTheValueExpiresBeforeAquiringCacheLock()
+    {
+        Cache::extend('array', fn () => new Repository(new class extends ArrayStore {
+            public function lock($name, $seconds = 0, $owner = null)
+            {
+                Carbon::setTestNow('2000-01-01 00:00:20'); // expire the key while we are aquiring the lock to refresh.
+
+                return parent::lock(...func_get_args());
+            }
+        }));
+        $cache = Cache::driver('array');
+
+        Carbon::setTestNow('2000-01-01 00:00:00');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 1);
+        $this->assertSame(1, $value);
+        $this->assertSame(1, $cache->get('foo'));
+        $this->assertCount(0, defer());
+
+        Carbon::setTestNow('2000-01-01 00:00:01');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 2);
+        $this->assertSame(1, $value);
+        $this->assertSame(1, $cache->get('foo'));
+        $this->assertCount(1, defer());
+
+        defer()->invoke();
+        $this->assertSame(2, $cache->get('foo'));
+    }
+
+    public function testStaleBoundary()
+    {
+        $cache = Cache::driver('array');
+
+        Carbon::setTestNow('2000-01-01 00:00:00.000000');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 1);
+        $this->assertSame(1, $value);
+        $this->assertCount(0, defer());
+
+        Carbon::setTestNow('2000-01-01 00:00:00.999999');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 2);
+        $this->assertSame(1, $value);
+        $this->assertCount(0, defer());
+
+        Carbon::setTestNow('2000-01-01 00:00:01.000000');
+        $value = $cache->flexible('foo', [1, 20], fn () => 2);
+        $this->assertSame(1, $value);
+        $this->assertCount(1, defer());
     }
 }

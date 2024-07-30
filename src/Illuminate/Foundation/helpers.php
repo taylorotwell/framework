@@ -408,7 +408,7 @@ if (! function_exists('defer')) {
      * @param  callable|null  $callback
      * @param  string|null  $name
      * @param  bool  $always
-     * @return \Illuminate\Foundation\Defer\DeferredCallback
+     * @return \Illuminate\Foundation\Defer\DeferredCallback|\Illuminate\Foundation\Defer\DeferredCallbackCollection
      */
     function defer(?callable $callback = null, ?string $name = null, bool $always = false)
     {
