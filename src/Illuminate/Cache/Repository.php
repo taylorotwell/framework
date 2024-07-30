@@ -496,7 +496,7 @@ class Repository implements ArrayAccess, CacheContract
             ], $ttl[1]));
         }
 
-        if (($created + $this->getSeconds($ttl[0])) > Carbon::now()->getTimestamp()) {
+        if (Carbon::now()->getTimestamp() < ($created + $this->getSeconds($ttl[0]))) {
             return $value;
         }
 
