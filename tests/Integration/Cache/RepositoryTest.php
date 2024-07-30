@@ -179,4 +179,26 @@ class RepositoryTest extends TestCase
         defer()->invoke();
         $this->assertSame(2, $cache->get('foo'));
     }
+
+    public function testStaleBoundary()
+    {
+        $cache = Cache::driver('array');
+
+        Carbon::setTestNow('2000-01-01 00:00:00.000000');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 1);
+        $this->assertSame(1, $value);
+        $this->assertCount(0, defer());
+
+        Carbon::setTestNow('2000-01-01 00:00:00.999999');
+
+        $value = $cache->flexible('foo', [1, 20], fn () => 2);
+        $this->assertSame(1, $value);
+        $this->assertCount(0, defer());
+
+        Carbon::setTestNow('2000-01-01 00:00:01.000000');
+        $value = $cache->flexible('foo', [1, 20], fn () => 2);
+        $this->assertSame(1, $value);
+        $this->assertCount(1, defer());
+    }
 }
