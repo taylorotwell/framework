@@ -8,7 +8,7 @@ use Orchestra\Testbench\TestCase;
 
 class RepositoryTest extends TestCase
 {
-    public function testStaleWhileRevalidate(): void
+    public function testFlexible(): void
     {
         Carbon::setTestNow('2000-01-01 00:00:00');
         $cache = Cache::driver('array');
