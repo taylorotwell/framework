@@ -10,6 +10,7 @@ class ConcurrencyTest extends TestCase
     {
         $this->defineCacheRoutes(<<<PHP
 <?php
+
 use Illuminate\Support\Facades\Concurrency;
 
 Route::any('/concurrency', function () {
