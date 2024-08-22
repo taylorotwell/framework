@@ -3,7 +3,9 @@
 namespace Illuminate\Tests\Integration\Console;
 
 use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\Attributes\RequiresOperatingSystem;
 
+#[RequiresOperatingSystem('Linux|DAR')]
 class ConcurrencyTest extends TestCase
 {
     protected function setUp(): void
