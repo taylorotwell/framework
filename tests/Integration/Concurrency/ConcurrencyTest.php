@@ -14,6 +14,7 @@ class ConcurrencyTest extends TestCase
 <?php
 
 use Illuminate\Support\Facades\Concurrency;
+use Illuminate\Support\Facades\Route;
 
 Route::any('/concurrency', function () {
     return Concurrency::run([
